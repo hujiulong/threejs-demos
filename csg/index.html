@@ -24,40 +24,57 @@
 
         <script src="../libs/three.min.js"></script>
 
+        <script src="../libs/controls/OrbitControls.js"></script>
+
+        <script src="./threeCSG.js"></script>
+
         <script>
 
             // hujiulong / hujiulong.com
 
-            var camera, scene, renderer;
-
-            var box;
-
-            var raycaster = new THREE.Raycaster();
-            var mouse = new THREE.Vector2();
+            var camera, scene, renderer, controls;
 
             init();
             animate();
 
             function init() {
 
-                // 相机
                 camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
                 camera.position.set( 0, 50, 50 );
                 camera.lookAt( new THREE.Vector3() );
 
-                // 场景
+                controls = new THREE.OrbitControls( camera );
+
                 scene = new THREE.Scene();
 
                 var light = new THREE.PointLight( 0xffffff, 1 );
                 light.position.set( 0, 100, 50 );
                 scene.add( light );
 
-                // 立方体
-                var geometry = new THREE.BoxGeometry( 10, 10, 10 );
-                var material = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
-                box = new THREE.Mesh( geometry, material );
+                var boxGeometry = new THREE.BoxGeometry( 20, 10, 20 );
+                var sphereGeometry = new THREE.SphereGeometry( 10, 32, 32 );
 
-                scene.add( box );
+                var box = new ThreeBSP( boxGeometry );
+                var sphere = new ThreeBSP( sphereGeometry );
+
+                var a = box.subtract( sphere );
+
+                var b = box.intersect( sphere );
+
+                var c = box.union( sphere );
+
+                var material = new THREE.MeshLambertMaterial( { color: 0xeeeeee } );
+
+                var mesh = new THREE.Mesh( a.toGeometry(), material );
+                mesh.position.x = - 30;
+                scene.add( mesh );
+
+                var mesh = new THREE.Mesh( b.toGeometry(), material );
+                scene.add( mesh );
+
+                var mesh = new THREE.Mesh( c.toGeometry(), material );
+                mesh.position.x = 30;
+                scene.add( mesh );
 
                 renderer = new THREE.WebGLRenderer( { antialias: true } );
                 renderer.setClearColor( 0xeeeeee );
@@ -66,9 +83,6 @@
 
                 var container = document.getElementById( 'container' );
                 container.appendChild( renderer.domElement );
-
-                // 在容器上注册事件，这里container也可以换成document
-                container.addEventListener( 'mousedown', onMouseDown, false );
 
                 window.addEventListener( 'resize', onWindowResize, false );
 
@@ -83,27 +97,6 @@
 
             }
 
-            function onMouseDown( event ) {
-
-                mouse.x = ( event.clientX / renderer.domElement.clientWidth ) * 2 - 1;
-                mouse.y = - ( event.clientY / renderer.domElement.clientHeight ) * 2 + 1;
-
-                raycaster.setFromCamera( mouse, camera );
-
-                var intersects = raycaster.intersectObject( box );
-
-                if ( intersects.length > 0 ) {
-                            
-                    // 点击立方体时，将立方体变为红色
-                    box.material.color.setHex( 0xff0000 );
-
-                } else {
-                            
-                    // 如果没有点击到，则将立方体变回绿色
-                    box.material.color.setHex( 0x00ff00 );
-
-                }
-            }
 
             function animate() {
 
